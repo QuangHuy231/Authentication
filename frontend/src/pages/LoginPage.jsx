@@ -3,14 +3,18 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import Input from "../components/Input";
 import { Lock, Mail, Loader } from "lucide-react";
+import { useAuthStore } from "../store/authStore";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const handleSubmit = (event) => {
+  const { login, isLoading, error } = useAuthStore();
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    await login(email, password);
   };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -49,6 +53,8 @@ overflow-hidden"
               Forgot Password?{" "}
             </Link>
           </div>
+
+          {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
 
           <motion.button
             className="mt-5 w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white 
