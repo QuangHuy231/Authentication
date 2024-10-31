@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 const EmailVerificationPage = () => {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
+  const [resendCountdown, setResendCountdown] = useState(300); // initial countdown value in seconds
   const { isLoading, verifyEmail, error } = useAuthStore();
   const navigate = useNavigate();
 
@@ -53,12 +54,29 @@ const EmailVerificationPage = () => {
     }
   };
 
+  const handleResend = () => {
+    // logic to resend the verification email
+    // you can call the appropriate function from your `useAuthStore` hook here
+    // for example: `verifyEmail()`
+    setResendCountdown(300); // reset the countdown to 300 seconds (5 minutes)
+  };
+
   //Auto submit when all inputs are filled
   useEffect(() => {
     if (code.every((digit) => digit !== "")) {
       handleSubmit(new Event("submit"));
     }
   }, [code]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (resendCountdown > 0) {
+        setResendCountdown(resendCountdown - 1);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
 
   return (
     <div className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden">
@@ -91,6 +109,26 @@ const EmailVerificationPage = () => {
           </div>
 
           {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
+          {/* tạo bộ đếm thời gian đếm ngược trong 5' để được gửi lại mail */}
+
+          <p className="text-center text-gray-300 mt-6">
+            Didn't receive the code?{" "}
+            {resendCountdown === 0 ? (
+              <a
+                href="#"
+                className="text-green-500 hover:text-green-600 font-semibold"
+                onClick={handleResend}
+              >
+                Resend
+              </a>
+            ) : (
+              <div className="ml-2 text-gray-400">
+                Resend in {Math.floor(resendCountdown / 60)} minutes and{" "}
+                {resendCountdown % 60} seconds
+              </div>
+            )}
+          </p>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

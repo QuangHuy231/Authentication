@@ -1,6 +1,6 @@
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import {
   sendResetPasswordEmail,
@@ -88,6 +88,39 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+// resend verification email
+export const resendVerificationEmail = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already verified" });
+    }
+
+    const verificationToken = Math.floor(100000 + Math.random() * 900000);
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+    await sendVerificationEmail(user.email, verificationToken);
+
+    res.status(200).json({
+      success: true,
+      message: "Verification email sent successfully",
+    });
+  } catch (error) {
+    console.log("Resend verification email error", error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -145,7 +178,7 @@ export const forgotPassword = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken = uuidv4();
     const resetTokenExpiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
     user.resetPasswordToken = resetToken;
